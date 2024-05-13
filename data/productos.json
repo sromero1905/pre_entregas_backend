@@ -1,0 +1,16 @@
+[
+  {
+    "title": "Nuevo producto",
+    "description": "Descripción del nuevo producto",
+    "code": "NP001",
+    "price": 19.99,
+    "status": true,
+    "stock": 10,
+    "category": "Electrónicos",
+    "thumbnails": [
+      "thumbnail1.jpg",
+      "thumbnail2.jpg"
+    ],
+    "id": 1
+  }
+]
