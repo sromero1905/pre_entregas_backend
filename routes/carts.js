@@ -1,11 +1,22 @@
-
+// routes/carts.js
 const express = require('express');
 const router = express.Router();
 const fs = require('fs');
 const path = require('path');
+const PRODUCTS_FILE = path.join(__dirname, '../data/productos.json');
 const CARTS_FILE = path.join(__dirname, '../data/carrito.json');
 
+// Leer productos desde el archivo
+async function readProductsFile() {
+  try {
+    const productsData = await fs.promises.readFile(PRODUCTS_FILE, 'utf-8');
+    return JSON.parse(productsData);
+  } catch (error) {
+    return [];
+  }
+}
 
+// Leer carritos desde el archivo
 async function readCartsFile() {
   try {
     const cartsData = await fs.promises.readFile(CARTS_FILE, 'utf-8');
@@ -15,7 +26,7 @@ async function readCartsFile() {
   }
 }
 
-
+// Escribir carritos en el archivo
 async function writeCartsFile(carts) {
   try {
     await fs.promises.writeFile(CARTS_FILE, JSON.stringify(carts, null, 2));
@@ -24,21 +35,17 @@ async function writeCartsFile(carts) {
   }
 }
 
-
-async function generateUniqueId() {
-  const carts = await readCartsFile();
-  let newId;
-  do {
-    newId = Math.random().toString(36).substr(2, 9);
-  } while (carts.some(cart => cart.id === newId));
-  return newId;
+// Obtener producto por código
+async function getProductByCode(code) {
+  const products = await readProductsFile();
+  return products.find(product => product.code === code);
 }
 
 // POST /api/carts
 router.post('/', async (req, res) => {
   try {
     const newCart = {
-      id: await generateUniqueId(),
+      id: Math.random().toString(36).substr(2, 9), // Generar ID aleatorio
       products: []
     };
     const carts = await readCartsFile();
@@ -50,7 +57,7 @@ router.post('/', async (req, res) => {
   }
 });
 
-// GET /api/carts/:cid
+
 router.get('/:cid', async (req, res) => {
   try {
     const carts = await readCartsFile();
@@ -64,6 +71,7 @@ router.get('/:cid', async (req, res) => {
   }
 });
 
+
 router.post('/:cid/product/:pid', async (req, res) => {
   try {
     const { cid, pid } = req.params;
@@ -73,9 +81,17 @@ router.post('/:cid/product/:pid', async (req, res) => {
       return res.status(404).json({ error: 'Carrito no encontrado' });
     }
     const cart = carts[cartIndex];
-    const productIndex = cart.products.findIndex(item => item.id === pid);
-    if (productIndex !== -1) {
-      cart.products[productIndex].quantity++;
+    
+    
+    const product = await getProductByCode(pid);
+    if (!product) {
+      return res.status(400).json({ error: 'Producto no encontrado' });
+    }
+
+    
+    const existingProductIndex = cart.products.findIndex(item => item.id === pid);
+    if (existingProductIndex !== -1) {
+      cart.products[existingProductIndex].quantity++;
     } else {
       cart.products.push({ id: pid, quantity: 1 });
     }
